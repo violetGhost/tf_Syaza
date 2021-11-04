@@ -28,7 +28,8 @@ import java.net.URISyntaxException;
 
 import java.util.List;
 import java.util.Optional;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.tecforte.blog.config.Constants;
 import com.tecforte.blog.domain.User;
@@ -155,10 +156,28 @@ public class EntryResource {
     public static boolean containsKeywords(String inputString, String[] keywords) {
         List<String> inputStringList = Arrays.asList(inputString.split(" "));
         List<String> keywordList = Arrays.asList(keywords);
+        
+        for (String x : inputStringList) {
+        	for (String y : keywordList) {
+        		
+        		String format = "\\b" + y + "\\b";
+	        	Pattern pattern = Pattern.compile(format);
+	        	Matcher matcher = pattern.matcher(x);
+	        	boolean temp = matcher.find();
+	        	
+	        	if (temp) {
+	        		return temp;
+	        	}
+	        	
+        	}
+        	
+        }
+		return false;       
 
-        boolean temp = inputStringList.contains(keywordList);
+//        boolean temp = inputStringList.contains(keywordList);
 //        return inputStringList.containsAll(keywordList);
-    	return Arrays.stream(keywords).anyMatch(inputString::contains);
+//    	return Arrays.stream(keywords).anyMatch(inputString::contains);
+        
     }
 
     /**

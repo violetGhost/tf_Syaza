@@ -1,8 +1,14 @@
 package com.tecforte.blog.web.rest;
 
+import com.tecforte.blog.domain.Blog;
+import com.tecforte.blog.domain.Entry;
+import com.tecforte.blog.repository.BlogRepository;
+import com.tecforte.blog.repository.EntryRepository;
 import com.tecforte.blog.service.BlogService;
+import com.tecforte.blog.service.EntryService;
 import com.tecforte.blog.web.rest.errors.BadRequestAlertException;
 import com.tecforte.blog.service.dto.BlogDTO;
+import com.tecforte.blog.service.dto.EntryDTO;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.ResponseUtil;
@@ -15,9 +21,11 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
-
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * REST controller for managing {@link com.tecforte.blog.domain.Blog}.
@@ -34,9 +42,15 @@ public class BlogResource {
     private String applicationName;
 
     private final BlogService blogService;
+    private final EntryService entryService;
+    private final BlogRepository blogRepository;
+    private final EntryRepository entryRepository;
 
-    public BlogResource(BlogService blogService) {
+    public BlogResource(BlogService blogService, EntryService entryService, BlogRepository blogRepository, EntryRepository entryRepository) {
         this.blogService = blogService;
+        this.entryService = entryService;
+        this.blogRepository = blogRepository;
+        this.entryRepository = entryRepository;
     }
 
     /**
@@ -116,4 +130,58 @@ public class BlogResource {
         blogService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString())).build();
     }
+    
+    @DeleteMapping("/blogs/{id}/clean")
+    public ResponseEntity<Void> deleteEntries(@PathVariable Long id, @RequestParam String keywords) {
+    	log.debug("REST request to delete Blog's Entries : {}", keywords);
+    	
+    	//List<String> inputStringList = Arrays.asList(keywords.split(","));
+        //Optional<Blog> blog = blogRepository.findById(id);
+        List<Entry> entries = entryRepository.findAllByBlogId(id);
+        
+        for (Entry x : entries) {
+        	
+        	if (containsKeywords(x.getTitle().toLowerCase(), keywords)) {        		
+        		entryService.delete(x.getId());        		
+        	}
+        	if (containsKeywords(x.getContent().toLowerCase(), keywords)) {
+        		entryService.delete(x.getId());
+        	}
+        	
+        }  	
+    	    	
+        return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString())).build();
+
+    	
+    }
+    
+    public static boolean containsKeywords(String inputString, String keywords) {
+        List<String> inputStringList = Arrays.asList(inputString.split(","));
+        List<String> keywordList = Arrays.asList(keywords);
+        
+        for (String x : inputStringList) {
+        	for (String y : keywordList) {
+        		
+        		String format = "\\b" + y + "\\b";
+	        	Pattern pattern = Pattern.compile(format);
+	        	Matcher matcher = pattern.matcher(x);
+	        	boolean temp = matcher.find();
+	        	
+	        	if (temp) {
+	        		return temp;
+	        	}
+	        	
+        	}
+        	
+        }
+		return false;       
+
+//        boolean temp = inputStringList.contains(keywordList);
+//        return inputStringList.containsAll(keywordList);
+//    	return Arrays.stream(keywords).anyMatch(inputString::contains);
+        
+    }
+
+    
+    
 }
