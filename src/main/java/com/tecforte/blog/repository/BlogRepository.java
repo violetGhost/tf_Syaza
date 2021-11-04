@@ -18,8 +18,6 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     @Query("select distinct blog from Blog blog left join fetch blog.entries")
     List<Blog> findAllWithEagerRelationships();
 
-   // @Override
-	@Query("SELECT e FROM Blog e WHERE e.id=?#{principal.id}")
-	public Blog findOne(Long id);
+    //test
 
 }
