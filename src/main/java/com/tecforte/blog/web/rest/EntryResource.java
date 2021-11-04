@@ -78,14 +78,13 @@ public class EntryResource {
 
     private final EntryService entryService;
 
-    private BlogRepository blogRepository;
+    private final BlogRepository blogRepository;
 
-    public EntryResource(EntryService entryService) {
+    public EntryResource(EntryService entryService,BlogRepository blogRepository) {
         this.entryService = entryService;
         this.blogRepository = blogRepository;
     }
-
-
+    
     /**
      * {@code POST  /entries} : Create a new entry.
      *
@@ -95,46 +94,55 @@ public class EntryResource {
      */
     @PostMapping("/entries")
     public ResponseEntity<EntryDTO> createEntry(@Valid @RequestBody EntryDTO entryDTO) throws URISyntaxException {
-        log.debug("REST request to save Entry : {}", entryDTO);
+        log.debug("RESTTTTTTT request to save Entry : {}", entryDTO);
         if (entryDTO.getId() != null) {
             throw new BadRequestAlertException("A new entry cannot already have an ID", ENTITY_NAME, "idexists");
         }
-
-        boolean isFound = true;
-
-        if (entryDTO.getBlogId() != null) { 
-            //Optional<Blog> fromBlog = blogRepository.findOne(entryDTO.getBlogId());
-            blogRepository = null;
-
-            String[] positiveKeywords = {"love", "happy", "trust"};
-            String[] negativeKeywords = {"sad", "fear", "lonely"};            
-
-            if (entryDTO.getTitle() != null) {
-
-                if (blogRepository.findOne(entryDTO.getBlogId()).isPositive()) {
-                    isFound = containsKeywords(entryDTO.getTitle().toLowerCase(), positiveKeywords);
-                } else {
-                    isFound = containsKeywords(entryDTO.getTitle(), negativeKeywords);
-                }
+        
+        if (entryDTO.getBlogId() != null) {    	       	     	
                 
-            }
-
-            if (entryDTO.getContent() != null) {
-
-                if (blogRepository.findOne(entryDTO.getBlogId()).isPositive()) {
-                    isFound = containsKeywords(entryDTO.getContent(), positiveKeywords);
-                } else {
-                    isFound = containsKeywords(entryDTO.getContent(), negativeKeywords);
-                }
-                
-            }
-
-        }
-
-        if (!isFound) {
-            throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
+	        Optional<Blog> temp = blogRepository.findById(entryDTO.getBlogId());
+	
+	        boolean isFoundT = false;
+	        boolean isFoundC = false;
+	
+	        String[] positiveKeywords = {"love", "happy", "trust"};
+	        String[] negativeKeywords = {"sad", "fear", "lonely"};            
+	
+	        if (entryDTO.getTitle() != null) {
+	
+	            if (blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundT = containsKeywords(entryDTO.getTitle().toLowerCase(), negativeKeywords);                    
+	            } 
+	            if (!blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundT = containsKeywords(entryDTO.getTitle().toLowerCase(), positiveKeywords);
+	            }
+	            
+	        }
+	
+	        if (entryDTO.getContent() != null) {
+	
+	            if (blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundC = containsKeywords(entryDTO.getContent().toLowerCase(), negativeKeywords);
+	            } 
+	            if (!blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundC = containsKeywords(entryDTO.getContent().toLowerCase(), positiveKeywords);
+	            }
+	            
+	        }
+	            
+	        if (isFoundT || isFoundC) { 
+	            throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
+	        } else {
+	            EntryDTO result = entryService.save(entryDTO);
+	            
+	            return ResponseEntity.created(new URI("/api/entries/" + result.getId()))
+	                .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, result.getId().toString()))
+	                .body(result);
+	        }
+        
         } else {
-            EntryDTO result = entryService.save(entryDTO);
+        	EntryDTO result = entryService.save(entryDTO);
             
             return ResponseEntity.created(new URI("/api/entries/" + result.getId()))
                 .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, result.getId().toString()))
@@ -148,7 +156,9 @@ public class EntryResource {
         List<String> inputStringList = Arrays.asList(inputString.split(" "));
         List<String> keywordList = Arrays.asList(keywords);
 
-        return inputStringList.containsAll(keywordList);
+        boolean temp = inputStringList.contains(keywordList);
+//        return inputStringList.containsAll(keywordList);
+    	return Arrays.stream(keywords).anyMatch(inputString::contains);
     }
 
     /**
@@ -167,46 +177,54 @@ public class EntryResource {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
 
-        boolean isFound = true;
-
-        if (entryDTO.getBlogId() != null) { 
-            //Optional<Blog> fromBlog = blogRepository.findOne(entryDTO.getBlogId());
-            blogRepository = null;
-
-            String[] positiveKeywords = {"love", "happy", "trust"};
-            String[] negativeKeywords = {"sad", "fear", "lonely"};            
-
-            if (entryDTO.getTitle() != null) {
-
-                if (blogRepository.findOne(entryDTO.getBlogId()).isPositive()) {
-                    isFound = containsKeywords(entryDTO.getTitle().toLowerCase(), positiveKeywords);
-                } else {
-                    isFound = containsKeywords(entryDTO.getTitle(), negativeKeywords);
-                }
-                
-            }
-
-            if (entryDTO.getContent() != null) {
-
-                if (blogRepository.findOne(entryDTO.getBlogId()).isPositive()) {
-                    isFound = containsKeywords(entryDTO.getContent(), positiveKeywords);
-                } else {
-                    isFound = containsKeywords(entryDTO.getContent(), negativeKeywords);
-                }
-                
-            }
-
-        }
-
-        if (!isFound) {
-            throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
+        if (entryDTO.getBlogId() != null) {    	       	     	
+            
+	        Optional<Blog> temp = blogRepository.findById(entryDTO.getBlogId());
+	
+	        boolean isFoundT = false;
+	        boolean isFoundC = false;
+	
+	        String[] positiveKeywords = {"love", "happy", "trust"};
+	        String[] negativeKeywords = {"sad", "fear", "lonely"};            
+	
+	        if (entryDTO.getTitle() != null) {
+	
+	            if (blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundT = containsKeywords(entryDTO.getTitle().toLowerCase(), negativeKeywords);                    
+	            } 
+	            if (!blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundT = containsKeywords(entryDTO.getTitle().toLowerCase(), positiveKeywords);
+	            }
+	            
+	        }
+	
+	        if (entryDTO.getContent() != null) {
+	
+	            if (blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundC = containsKeywords(entryDTO.getContent().toLowerCase(), negativeKeywords);
+	            } 
+	            if (!blogRepository.findById(entryDTO.getBlogId()).get().isPositive()) {
+	            	isFoundC = containsKeywords(entryDTO.getContent().toLowerCase(), positiveKeywords);
+	            }
+	            
+	        }
+	            
+	        if (isFoundT || isFoundC) { 
+	            throw new BadRequestAlertException("Invalid Content", ENTITY_NAME, "invalidContent");
+	        } else {
+	            EntryDTO result = entryService.save(entryDTO);
+	            
+	            return ResponseEntity.created(new URI("/api/entries/" + result.getId()))
+	                .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, result.getId().toString()))
+	                .body(result);
+	        }
+        
         } else {
-            EntryDTO result = entryService.save(entryDTO);
+        	EntryDTO result = entryService.save(entryDTO);
             return ResponseEntity.ok()
                 .headers(HeaderUtil.createEntityUpdateAlert(applicationName, false, ENTITY_NAME, entryDTO.getId().toString()))
                 .body(result);
         }
-
         
     }
 
